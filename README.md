@@ -27,7 +27,6 @@ For example, let's say you have multiple Docker projects, and their folder struc
 /home/pi/composefiles/
 
     ├── project1/
-    
     │   ├── docker-compose.yaml
     
     │   └── ...
