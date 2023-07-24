@@ -25,15 +25,25 @@ When you run the script, it will look for 'docker-compose.yaml' files in all sub
 For example, let's say you have multiple Docker projects, and their folder structure is as follows:
 
 /home/pi/composefiles/
+
     ├── project1/
+    
     │   ├── docker-compose.yaml
+    
     │   └── ...
+    
     ├── project2/
+    
     │   ├── docker-compose.yaml
+    
     │   └── ...
+    
     ├── project3/
+    
     │   ├── docker-compose.yaml
+    
     │   └── ...
+    
     └── ...
 
 Then /home/pi/composefiles should be the base_directory on the refresh.conf file
