@@ -11,7 +11,7 @@ def read_config():
     config = configparser.ConfigParser()
     config.read(os.path.join(current_directory, 'refresh.conf'))
     delete_old_images_after_update = config.get('OPTIONS', 'delete_old_images_after_update', fallback='no')
-    base_directory = config.get('OPTIONS', 'base_directory', fallback='/home/surce/Applications')
+    base_directory = config.get('OPTIONS', 'base_directory', fallback='/home/pi/composefiles')
     return delete_old_images_after_update.lower(), base_directory
 
 delete_old_images_after_update, base_directory = read_config()
