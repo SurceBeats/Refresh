@@ -11,7 +11,7 @@ def read_config():
     config = configparser.ConfigParser()
     config.read(os.path.join(current_directory, 'refresh.conf'))
     delete_old_images_after_update = config.get('OPTIONS', 'delete_old_images_after_update', fallback='no')
-    base_directory = config.get('OPTIONS', 'base_directory', fallback='/home/pi/composefiles')
+    base_directory = config.get('OPTIONS', 'base_directory', fallback='/home/surce/Applications')
     return delete_old_images_after_update.lower(), base_directory
 
 delete_old_images_after_update, base_directory = read_config()
@@ -50,7 +50,7 @@ def find_docker_compose_files(directory):
     docker_compose_files = []
     for root, _, files in os.walk(directory):
         for file in files:
-            if file == "docker-compose.yaml":
+            if file == "docker-compose.yml":
                 docker_compose_files.append(os.path.join(root, file))
     return docker_compose_files
 
@@ -58,7 +58,7 @@ def update_containers():
     docker_compose_files = find_docker_compose_files(base_directory)
 
     if not docker_compose_files:
-        print("<> Image Status: No 'docker-compose.yaml' files found in", base_directory)
+        print("<> Image Status: No 'docker-compose.yml' files found in", base_directory)
         return
 
     for file_path in docker_compose_files:
@@ -68,17 +68,17 @@ def update_containers():
         os.chdir(folder)
         time.sleep(0.1)
 
-        with open("docker-compose.yaml", "r") as compose_file:
+        with open("docker-compose.yml", "r") as compose_file:
             try:
                 compose_data = yaml.safe_load(compose_file)
             except yaml.YAMLError as exc:
-                print("<> Image Status: Unable to parse docker-compose.yaml file in", folder)
+                print("<> Image Status: Unable to parse docker-compose.yml file in", folder)
                 print(exc)
                 continue
 
         services = compose_data.get("services")
         if not services:
-            print("<> Image Status: No 'services' section found in docker-compose.yaml... Skipping Update")
+            print("<> Image Status: No 'services' section found in docker-compose.yml... Skipping Update")
             continue
 
         service_name = next(iter(services))
@@ -88,7 +88,7 @@ def update_containers():
         docker_hostname = service_data.get("container_name")
 
         if not docker_image or not docker_hostname:
-            print("<> Image Status: Unable to find 'image' or 'container_name' in docker-compose.yaml file... Skipping Update")
+            print("<> Image Status: Unable to find 'image' or 'container_name' in docker-compose.yml file... Skipping Update")
             continue
 
         print("<> Current image for container is:", docker_image)
