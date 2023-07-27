@@ -11,7 +11,7 @@ def read_config():
     config = configparser.ConfigParser()
     config.read(os.path.join(current_directory, 'refresh.conf'))
     delete_old_images_after_update = config.get('OPTIONS', 'delete_old_images_after_update', fallback='no')
-    base_directory = config.get('OPTIONS', 'base_directory', fallback='/home/surce/Applications')
+    base_directory = config.get('OPTIONS', 'base_directory', fallback='/home/pi/composefiles')
     return delete_old_images_after_update.lower(), base_directory
 
 delete_old_images_after_update, base_directory = read_config()
@@ -111,6 +111,6 @@ def update_containers():
         except Exception as e:
             print("<> Error occurred while updating container:", e)
 
-delete_old_images_after_update, _ = read_config()  # Solo necesitamos el primer valor de la configuración
+delete_old_images_after_update, _ = read_config()
 update_containers()
 print('')
