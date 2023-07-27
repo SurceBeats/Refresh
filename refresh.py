@@ -7,7 +7,23 @@ import configparser
 
 current_directory = os.path.dirname(os.path.abspath(__file__))
 
+def check_and_generate_config():
+    config_file = os.path.join(current_directory, 'refresh.conf')
+
+    if not os.path.exists(config_file):
+        # Si el archivo no existe, lo generamos y añadimos las líneas requeridas
+        config = configparser.ConfigParser()
+        config['OPTIONS'] = {
+            'delete_old_images_after_update': 'no',
+            'base_directory': '/home/pi/composefiles'
+        }
+
+        with open(config_file, 'w') as configfile:
+            config.write(configfile)
+
 def read_config():
+    check_and_generate_config()
+
     config = configparser.ConfigParser()
     config.read(os.path.join(current_directory, 'refresh.conf'))
     delete_old_images_after_update = config.get('OPTIONS', 'delete_old_images_after_update', fallback='no')
@@ -111,6 +127,6 @@ def update_containers():
         except Exception as e:
             print("<> Error occurred while updating container:", e)
 
-delete_old_images_after_update, _ = read_config()
+delete_old_images_after_update, _ = read_config()  # Solo necesitamos el primer valor de la configuración
 update_containers()
 print('')
