@@ -4,8 +4,21 @@ import subprocess
 import yaml
 import docker
 import configparser
+import sys
 
 current_directory = os.path.dirname(os.path.abspath(__file__))
+
+def uprint(texto, informacion=None, informacion2=None):
+    erase_line = '\x1b[2K'  # Código de escape para borrar la línea actual
+    carriage_return = '\r'  # Retorno de carro para el inicio de la línea
+
+    if informacion is not None and informacion2 is not None:
+        sys.stdout.write(f"{erase_line}{carriage_return}" + texto + str(informacion) + str(informacion2))
+    if informacion is not None:
+        sys.stdout.write(f"{erase_line}{carriage_return}" + texto + str(informacion))
+    else:
+        sys.stdout.write(f"{erase_line}{carriage_return}" + texto)
+    sys.stdout.flush()
 
 def check_and_generate_config():
     config_file = os.path.join(current_directory, 'refresh.conf')
@@ -32,9 +45,9 @@ def read_config():
 
 delete_old_images_after_update, base_directory = read_config()
 
-print("")
+print()
 print("Refresh by Surce v1.2.4c")
-print("")
+print()
 print("!! Running from:", current_directory)
 if delete_old_images_after_update.lower() == 'yes':
     print("!! Option 'delete_old_images_after_update' is enabled")
@@ -43,9 +56,9 @@ else:
 if base_directory.lower():
     print("!! Base Directory is:", base_directory)
 
-print("")
-print("<> Folder Structure: Scanning folders in", base_directory)
-time.sleep(1)
+print()
+uprint("<> Folder Structure: Scanning folders in", base_directory)
+time.sleep(0.1)
 
 def delete_unused_images(container_name):
     client = docker.from_env()
@@ -57,11 +70,11 @@ def delete_unused_images(container_name):
         unused_images = client.images.prune(filters={'dangling': False})
         for image in unused_images.get('ImagesDeleted', []):
             if image.get('Deleted') and image['Deleted'] not in image_ids:
-                print(f"Deleted unused image: {image['Deleted']}")
-
+                uprint(f"<> Deleted unused image: {image['Deleted']}")
+                time.sleep(0.1)
     except docker.errors.NotFound:
-        print(f"Container '{container_name}' not found.")
-
+        uprint(f"<> Container '{container_name}' not found.")
+        time.sleep(0.1)
 def find_docker_compose_files(directory):
     docker_compose_files = []
     for root, _, files in os.walk(directory):
@@ -74,27 +87,30 @@ def update_containers():
     docker_compose_files = find_docker_compose_files(base_directory)
 
     if not docker_compose_files:
-        print("<> Image Status: No 'docker-compose.yml' files found in", base_directory)
+        uprint("<> Image Status: No 'docker-compose.yml' files found in", base_directory)
+        time.sleep(0.1)
         return
 
     for file_path in docker_compose_files:
         folder = os.path.dirname(file_path)
-        print('')
-        print(f"Processing folder: {folder}")
-        os.chdir(folder)
+        uprint(f"<> Processing folder: {folder}")
         time.sleep(0.1)
+        os.chdir(folder)
 
         with open("docker-compose.yml", "r") as compose_file:
             try:
                 compose_data = yaml.safe_load(compose_file)
             except yaml.YAMLError as exc:
-                print("<> Image Status: Unable to parse docker-compose.yml file in", folder)
-                print(exc)
+                uprint("<> Image Status: Unable to parse docker-compose.yml file in", folder)
+                time.sleep(0.1)
+                uprint(exc)
+                time.sleep(0.1)
                 continue
 
         services = compose_data.get("services")
         if not services:
-            print("<> Image Status: No 'services' section found in docker-compose.yml... Skipping Update")
+            uprint("<> Image Status: No 'services' section found in docker-compose.yml... Skipping Update")
+            time.sleep(0.1)
             continue
 
         service_name = next(iter(services))
@@ -104,19 +120,26 @@ def update_containers():
         docker_hostname = service_data.get("container_name")
 
         if not docker_image or not docker_hostname:
-            print("<> Image Status: Unable to find 'image' or 'container_name' in docker-compose.yml file... Skipping Update")
+            uprint("<> Image Status: Unable to find 'image' or 'container_name' in docker-compose.yml file... Skipping Update")
+            time.sleep(0.1)
             continue
 
-        print("<> Current image for container is:", docker_image)
-        print("<> Current hostname for container is:", docker_hostname)
+        uprint("<> Current image for container is: ", docker_image)
+        time.sleep(0.1)
+        uprint("<> Current hostname for container is: ", docker_hostname)
+        time.sleep(0.1)
 
         try:
             # Use subprocess to run docker pull and check the output with grep
             pull_process = subprocess.run(["sudo", "docker", "pull", docker_image], capture_output=True, text=True)
             if "Image is up to date" in pull_process.stdout:
-                print("\033[1;32;40m<>\033[0m", docker_hostname, "is up to date")
+                uprint("")
+                print("\033[1;32;40m<>\033[0m Up to date:", docker_hostname)
+                time.sleep(0.1)
             else:
-                print("\033[1;31;40m<>\033[0m", docker_hostname, "outdated, updating...")
+                uprint("")
+                print("\033[1;31;40m<>\033[0m Outdated:  ", docker_hostname)
+                time.sleep(0.1)
                 subprocess.run(["sudo", "docker-compose", "stop", docker_hostname])
                 subprocess.run(["sudo", "docker-compose", "rm", "-f", docker_hostname])
                 subprocess.run(["sudo", "docker-compose", "pull", docker_hostname])
@@ -125,8 +148,12 @@ def update_containers():
                     delete_unused_images(docker_hostname)
 
         except Exception as e:
-            print("<> Error occurred while updating container:", e)
+            uprint(f"<> Error occurred while updating container: {e}", "")
+            time.sleep(0.1)
 
 delete_old_images_after_update, _ = read_config()  # Solo necesitamos el primer valor de la configuración
 update_containers()
-print('')
+print()
+uprint("\033[1;32;40m<>\033[0m Finished!")
+print()
+print()
